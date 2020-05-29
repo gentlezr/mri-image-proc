@@ -1,0 +1,11 @@
+# Created by .ignore support plugin (hsz.mobi)
+.idea/.gitignore
+.idea/inspectionProfiles/
+.idea/misc.xml
+.idea/modules.xml
+.idea/mri-image-processing.iml
+.idea/other.xml
+.idea/vcs.xml
+assignment/
+data/
+/data/
