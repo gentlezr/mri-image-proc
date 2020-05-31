@@ -1,6 +1,7 @@
 # Importing libraries
 import glob
 import os
+import argparse
 
 import matplotlib
 import nibabel as nib
@@ -201,6 +202,10 @@ class MRIViewer:
                     break
                 elif event.key == "h":
                     self.__draw_gaussian_filters(i)
+                    break
+                elif event.key == "j":
+                    self.__draw_only_blurred(i)
+                    break
 
     def __go_up(self, ax):
         self.slice[ax] += 1
@@ -221,9 +226,21 @@ class MRIViewer:
     def __draw_gaussian_filters(self, ax):
         filters = [2, 5, 10, 15, 21]
         f = self.create_gaussian_filters(np.array(self.brain[ax][:, :, self.slice[ax]]).shape, filters)
-        fig, axes = plt.subplots(1, len(f))
+        fig, axes = plt.subplots(1, len(f), figsize=(7, 7))
         for i, axe in enumerate(axes):
+            axe.set_title(f"sigma:{filters[i]}")
             axe.imshow(f[i])
+        plt.show()
+
+    def __draw_only_blurred(self, ax):
+        filters = [2, 5, 10, 15, 21]
+        f = self.create_gaussian_filters(np.array(self.brain[ax][:, :, self.slice[ax]]).shape, filters)
+        f_shift = self.fft_shift(self.brain[ax][:, :, self.slice[ax]])
+        out_gaussian = self.apply_gaussian_iftt(f_shift, f)
+        fig, axes = plt.subplots(1, len(f), figsize=(7, 7))
+        for i, axe in enumerate(axes):
+            axe.set_title(f"sigma:{filters[i]}")
+            axe.imshow(abs(out_gaussian[i]))
         plt.show()
 
     def __draw_subplots(self, ax, sigma):
@@ -261,6 +278,19 @@ class MRIViewer:
         plt.show()
 
 
+def str_to_bool(value):
+    if value.lower() in {'false', 'f', '0', 'no', 'n'}:
+        return False
+    elif value.lower() in {'true', 't', '1', 'yes', 'y'}:
+        return True
+    raise ValueError(f'{value} is not a valid boolean value')
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--hist-eq', type=str_to_bool, nargs='?', const=True, default=False)
+
+args = parser.parse_args()
+
 # Project data directory
 dir = "data"
 f_names = glob.glob(os.path.join(dir, "*"))
@@ -272,6 +302,6 @@ mri_img = nib.load(f_names[int(inp)])
 mri_img_data = mri_img.get_fdata()
 
 # Creating viewer instance
-v = MRIViewer(mri_img_data, hist_equ=True, sig=20)
+v = MRIViewer(mri_img_data, hist_equ=args.hist_eq, sig=20)
 # Showing Figures
 plt.show()
