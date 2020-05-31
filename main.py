@@ -199,6 +199,8 @@ class MRIViewer:
                 elif event.key == "y":
                     self.__draw_subplots(i, self.sig)
                     break
+                elif event.key == "h":
+                    self.__draw_gaussian_filters(i)
 
     def __go_up(self, ax):
         self.slice[ax] += 1
@@ -215,6 +217,14 @@ class MRIViewer:
         self.frame[ax].set_data(im)
         self.axes[ax].set_title(f"{self.view[ax]}, Slice: {self.slice[ax]}")
         plt.draw()
+
+    def __draw_gaussian_filters(self, ax):
+        filters = [2, 5, 10, 15, 21]
+        f = self.create_gaussian_filters(np.array(self.brain[ax][:, :, self.slice[ax]]).shape, filters)
+        fig, axes = plt.subplots(1, len(f))
+        for i, axe in enumerate(axes):
+            axe.imshow(f[i])
+        plt.show()
 
     def __draw_subplots(self, ax, sigma):
         """
