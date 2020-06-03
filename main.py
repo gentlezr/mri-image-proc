@@ -1,11 +1,12 @@
 # Importing libraries
+import argparse
 import glob
 import os
-import argparse
 
 import matplotlib
 import nibabel as nib
 import numpy as np
+from scipy.signal import convolve2d
 
 # Setting Matplotlib backend to Qt5, in order to use GUI interactively
 matplotlib.use('Qt5Agg')
@@ -140,17 +141,18 @@ class MRIViewer:
         return blurred
 
     @staticmethod
-    def apply_high_boost(raw, gaussian_applied, k):
+    def apply_edge_enhance(raw):
         """
-        Only applies high boost in to guassian filtered 2D array
+        Only applies edge enhancement in to convolved2d raw 2D array
 
         :param raw: Raw 2D array
-        :param gaussian_applied: Gaussian filter applied image
-        :param k: Boost coefficient
         :return: Edge enhanced image
         """
-
-        return ((k + 1) * raw) - (k * gaussian_applied)
+        kernel = np.array([[-2, -2, -2],
+                           [-2, 25, -2],
+                           [-2, -2, -2]])
+        boosted = convolve2d(raw, kernel)
+        return boosted
 
     @staticmethod
     def histeq(image, n_bins=256):
@@ -258,15 +260,15 @@ class MRIViewer:
         # Applies filters
         filt_ga = self.create_gaussian_filters(f_shift.shape[: 2], [sigma])
         out_gaussian = self.apply_gaussian_iftt(f_shift, filt_ga)
-        k = 20
-        out_high_boost = self.apply_high_boost(raw, out_gaussian[0], k=k)
+
+        out_high_boost = self.apply_edge_enhance(raw)
         # Plots figures
         self.sub_axes[0, 0].imshow(raw, cmap="gray", origin="lower")
         self.sub_axes[0, 0].set_title("Raw Image")
         self.sub_axes[0, 1].imshow(50 * np.log(abs(1 + f_shift)), cmap="gray", origin="lower")
         self.sub_axes[0, 1].set_title("2D-FFT Shift")
         self.sub_axes[1, 0].imshow(abs(out_high_boost), cmap="gray", origin="lower")
-        self.sub_axes[1, 0].set_title(f"High Boost - Sigma: {sigma} - k: {k}")
+        self.sub_axes[1, 0].set_title(f"Edge Enhanced")
         self.sub_axes[1, 1].imshow(abs(out_gaussian[0]), cmap="gray", origin="lower")
         self.sub_axes[1, 1].set_title(f"Gaussian - Sigma: {sigma}")
 
@@ -302,6 +304,6 @@ mri_img = nib.load(f_names[int(inp)])
 mri_img_data = mri_img.get_fdata()
 
 # Creating viewer instance
-v = MRIViewer(mri_img_data, hist_equ=args.hist_eq, sig=20)
+v = MRIViewer(mri_img_data, hist_equ=args.hist_eq, sig=50)
 # Showing Figures
 plt.show()
